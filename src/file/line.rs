@@ -15,6 +15,14 @@ pub struct LineFile {
 }
 
 impl LineFile {
+    pub fn new(name: String, lines: Vec<Vec<Vec4>>) -> Self {
+        Self {
+            bounds: Bounds::from_vertices(lines.iter().flatten()),
+            name,
+            lines,
+        }
+    }
+
     pub fn name(&self) -> &str {
         &self.name
     }
@@ -92,6 +100,13 @@ pub struct TrackScalarFile {
 }
 
 impl TrackScalarFile {
+    pub fn new(name: &str, values: Vec<f32>) -> Self {
+        Self {
+            name: name.to_string(),
+            values,
+        }
+    }
+
     pub fn from_tsf(file: File) -> TrackScalarFile {
         let bytes = file.data();
 
