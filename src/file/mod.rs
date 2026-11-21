@@ -2,6 +2,7 @@ pub mod bounds;
 pub mod hdri;
 pub mod line;
 pub mod nrrd;
+pub mod trx;
 pub mod volume;
 
 pub use line::*;
@@ -224,25 +225,29 @@ impl FileStage {
         }
 
         for file in files {
-            if file.name().ends_with(".tck") {
-                lines.push(LineFile::from_tck(file));
-            } else if file.name().ends_with(".obj") {
-                lines.push(LineFile::from_obj(file));
-            } else if file.name().ends_with(".tsf") {
-                track_scalars.push(TrackScalarFile::from_tsf(file));
-            } else if file.name().ends_with(".nii") {
-                volumes.push(VolumeFile::from_nifti(&file));
-            } else if file.name().ends_with(".nii.gz") {
-                volumes.push(VolumeFile::from_comressed_nifti(&file));
-            } else if file.name().ends_with(".nrrd") {
-                volumes.push(VolumeFile::from_nrrd(&file));
-            } else if file.name().ends_with(".exr") {
-                hdris.push(HdriFile::from_exr(&file));
+            let name = file.name();
+            let ext = if name.ends_with(".nii.gz") {
+                "nii.gz"
             } else {
-                warn!(
-                    "Cannot open `{}`. Supported file types are [.tck .obj .tsf .nii .nii.gz .nrrd .nhdr .exr]",
-                    file.name()
-                )
+                name.rsplit('.').next().unwrap_or("")
+            };
+
+            match ext {
+                "trx" => {
+                    let (trx_lines, trx_scalars) = trx::load(file);
+                    lines.extend(trx_lines);
+                    track_scalars.extend(trx_scalars);
+                }
+                "tck" => lines.push(LineFile::from_tck(file)),
+                "obj" => lines.push(LineFile::from_obj(file)),
+                "tsf" => track_scalars.push(TrackScalarFile::from_tsf(file)),
+                "nii" => volumes.push(VolumeFile::from_nifti(&file)),
+                "nii.gz" => volumes.push(VolumeFile::from_comressed_nifti(&file)),
+                "nrrd" => volumes.push(VolumeFile::from_nrrd(&file)),
+                "exr" => hdris.push(HdriFile::from_exr(&file)),
+                _ => warn!(
+                    "Cannot open `{name}`. Supported file types are [.trx .tck .obj .tsf .nii .nii.gz .nrrd .nhdr .exr]"
+                ),
             }
         }
 
